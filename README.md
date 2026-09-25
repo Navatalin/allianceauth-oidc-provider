@@ -21,7 +21,8 @@
 
 ## Setup/Install:
 
-1. `pip install allianceauth-oidc-provider`
+1. Install this fork (not the upstream PyPI release): `pip install git+https://github.com/Navatalin/allianceauth-oidc-provider.git`
+
 1. add to INSTALLED_APPS
 
    ```
@@ -53,18 +54,10 @@ OAUTH2_PROVIDER = {
 'REFRESH_TOKEN_EXPIRE_SECONDS': 24*60*60,
 'ROTATE_REFRESH_TOKEN': True,
 }
-```
 
-To issue a generated email claim instead of the user's registered address, set
-`ALLIANCEAUTH_OIDC_EMAIL_DOMAIN = "example.invalid"` in your Django settings.
-This optional setting is disabled by default. When enabled, the `email` claim is
-`<main_character_id>@example.invalid` (for example, `123456@example.invalid`).
-Supply only a domain name, without a scheme, port, `@`, path, or trailing dot;
-invalid values raise `ImproperlyConfigured`. If a user has no main character,
-the email claim is omitted rather than falling back to their registered address.
-Generated addresses need not be deliverable and change when a user changes their
-main character. Relying parties should identify users by the stable `sub` claim,
-not by email.
+# Optional: replace the registered email in OIDC claims with a generated address.
+# ALLIANCEAUTH_OIDC_EMAIL_DOMAIN = "example.invalid"
+```
 
 Please see [this](https://django-oauth-toolkit.readthedocs.io/en/stable/oidc.html#creating-rsa-private-key) for more info on creating and managing a private key
 
@@ -79,6 +72,20 @@ Please see [this](https://django-oauth-toolkit.readthedocs.io/en/stable/oidc.htm
 1. run migrations
 1. restart auth
 
+### Generated email addresses (optional)
+
+By default the `email` claim contains the user's registered Alliance Auth email.
+To replace it, uncomment `ALLIANCEAUTH_OIDC_EMAIL_DOMAIN` in the Django settings
+example above. With `"example.invalid"`, a main character ID of `123456` produces
+`123456@example.invalid`. Supply only a domain name: URLs, email addresses,
+ports, paths, trailing dots, whitespace, and invalid domains are rejected with
+`ImproperlyConfigured`. An empty or unset value keeps the registered email.
+
+If a user has no main character, generated-email mode omits `email` rather than
+revealing the registered address. Generated addresses need not be deliverable and
+change when the user's main character changes. Relying parties should identify
+users by the stable `sub` claim, not by email.
+
 ## Application setup
 
 ### The Big 4
@@ -90,14 +97,17 @@ Please see [this](https://django-oauth-toolkit.readthedocs.io/en/stable/oidc.htm
 
 ### Claims
 
-- `openid profile email`
+Request `openid profile email` to receive the user ID, main character display
+name, groups, and email. In particular, `openid email` does **not** return a
+display name: the client must request `profile` and map its display name to
+the `name` claim. Scope filtering applies to ID tokens and `/o/userinfo/`.
 
 ### Claim key mapping
 
-- `name` Eve Main Character Name ( Profile Grant? )
-- `email` Registered email or generated main-character-ID address ( Email Grant )
-- `groups` List of all groups with the members state thrown in too ( Profile Grant )
-- `sub` PK of user model
+- `sub` Alliance Auth user ID (`openid` scope)
+- `name` Main character name (`profile` scope)
+- `groups` Auth groups plus the user's state (`profile` scope)
+- `email` Registered email or generated main-character-ID address (`email` scope)
 
 ### Create an application
 
