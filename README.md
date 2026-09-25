@@ -44,7 +44,7 @@ OAUTH2_PROVIDER = {
 "OAUTH2_VALIDATOR_CLASS": "allianceauth_oidc.auth_provider.AllianceAuthOAuth2Validator",
 "SCOPES": {
 "openid": "User Profile",
-"email": "Registered email",
+"email": "Registered or generated email",
 "profile": "Main Character affiliation and Auth groups"
 },
 "PKCE_REQUIRED": False,
@@ -54,6 +54,17 @@ OAUTH2_PROVIDER = {
 'ROTATE_REFRESH_TOKEN': True,
 }
 ```
+
+To issue a generated email claim instead of the user's registered address, set
+`ALLIANCEAUTH_OIDC_EMAIL_DOMAIN = "example.invalid"` in your Django settings.
+This optional setting is disabled by default. When enabled, the `email` claim is
+`<main_character_id>@example.invalid` (for example, `123456@example.invalid`).
+Supply only a domain name, without a scheme, port, `@`, path, or trailing dot;
+invalid values raise `ImproperlyConfigured`. If a user has no main character,
+the email claim is omitted rather than falling back to their registered address.
+Generated addresses need not be deliverable and change when a user changes their
+main character. Relying parties should identify users by the stable `sub` claim,
+not by email.
 
 Please see [this](https://django-oauth-toolkit.readthedocs.io/en/stable/oidc.html#creating-rsa-private-key) for more info on creating and managing a private key
 
@@ -84,7 +95,7 @@ Please see [this](https://django-oauth-toolkit.readthedocs.io/en/stable/oidc.htm
 ### Claim key mapping
 
 - `name` Eve Main Character Name ( Profile Grant? )
-- `email` Registered email on auth ( Email Grant )
+- `email` Registered email or generated main-character-ID address ( Email Grant )
 - `groups` List of all groups with the members state thrown in too ( Profile Grant )
 - `sub` PK of user model
 
